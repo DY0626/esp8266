@@ -113,4 +113,13 @@ static void servo_settings_tick() {
   }
 }
 
+// 清除舵机参数（写入空数据，magic 失效）
+static void clearServoSettings() {
+  EEPROM.begin(EEPROM_SIZE);
+  ServoSettingsBlob b;
+  memset(&b, 0, sizeof(b));
+  EEPROM.put(SERVO_EEPROM_ADDR, b);
+  EEPROM.commit();
+}
+
 #endif // SERVO_STORE_H
