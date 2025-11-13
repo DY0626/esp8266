@@ -1,0 +1,68 @@
+name: Build Word Document from Markdown
+
+on:
+  push:
+    branches:
+      - report-docx
+    paths:
+      - 'docs/**'
+  pull_request:
+    branches:
+      - report-docx
+    paths:
+      - 'docs/**'
+
+jobs:
+  build-docx:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed to commit and push the generated .docx file
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Install pandoc and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc fonts-noto-cjk
+          pandoc --version
+      
+      - name: Set UTF-8 locale
+        run: |
+          sudo locale-gen zh_CN.UTF-8
+          export LANG=zh_CN.UTF-8
+          export LC_ALL=zh_CN.UTF-8
+      
+      - name: Convert Markdown to Word
+        run: |
+          cd docs
+          pandoc "关于单片机的智能开关设计.md" \
+            --from gfm+yaml_metadata_block \
+            --to docx \
+            --number-sections \
+            --toc \
+            --toc-depth=3 \
+            --csl gbt-7714-2015-numeric.csl \
+            --bibliography references.bib \
+            --resource-path=. \
+            -o "关于单片机的智能开关设计.docx"
+          ls -lh "关于单片机的智能开关设计.docx"
+      
+      - name: Commit generated Word document
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: 'docs/关于单片机的智能开关设计.docx'
+          message: 'chore(docs): build Word .docx from Markdown via CI'
+          author_name: 'github-actions[bot]'
+          author_email: 'github-actions[bot]@users.noreply.github.com'
+          push: true
+      
+      - name: Upload Word document as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: thesis-docx
+          path: docs/关于单片机的智能开关设计.docx
+          retention-days: 90
